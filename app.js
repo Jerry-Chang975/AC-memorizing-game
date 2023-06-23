@@ -1,82 +1,106 @@
-let tryTimes = 0;
-let score = 0;
-const shuffledCards = [];
-let firstCards = null;
+const GAME_STATE = {
+  FirstCardAwaits: 'FirstCardAwaits',
+  SecondCardAwaits: 'SecondCardAwaits',
+  CardsMatchFailed: 'CardsMatchFailed',
+  CardsMatched: 'CardsMatched',
+  GameFinished: 'GameFinished',
+};
 
 const cardsPanel = document.querySelector('#cardsPanel');
-const triedElement = document.querySelector('#tryTimes');
-const scoreElement = document.querySelector('#score');
-const cardMap = [
-  'A',
-  '2',
-  '3',
-  '4',
-  '5',
-  '6',
-  '7',
-  '8',
-  '9',
-  '10',
-  'J',
-  'Q',
-  'K',
-];
 
-// shuffle the cards
-function shuffle() {
-  // generate 0 ~ 51
-  const cards = [...Array(52).keys()];
+const views = {
+  renderCards(container, renderHTML) {
+    container.innerHTML += renderHTML;
+  },
+  renderScore() {
+    document.querySelector('#score').textContent = `Score: ${models.score}`;
+    document.querySelector(
+      '#completedScore'
+    ).textContent = `Score: ${models.score}`;
+  },
+  renderTriedTimes() {
+    document.querySelector(
+      '#tryTimes'
+    ).textContent = `You've tried: ${models.triedTimes}`;
+    document.querySelector(
+      '#completedTriedTimes'
+    ).textContent = `You've tried: ${models.triedTimes}`;
+  },
+  closeCards(cardsIndex) {
+    cardsIndex.forEach((cardIndex) => {
+      let cardImg = document.querySelector(`[data-card-id="${cardIndex}"]`);
+      // setTimeout(() => {
+      cardImg.parentElement.classList.remove('flip-card-back');
+      cardImg.parentElement.nextElementSibling.classList.remove(
+        'flip-card-front'
+      );
+      cardImg.parentElement.nextElementSibling.style.backgroundColor =
+        '#ffffff';
+      // }, 300);
+    });
+  },
+  fillCardsColor(cardsIndex) {
+    cardsIndex.forEach((cardIndex) => {
+      let cardImg = document.querySelector(`[data-card-id="${cardIndex}"]`);
+      cardImg.parentElement.nextElementSibling.style.backgroundColor =
+        '#b4d9ef';
+    });
+  },
+  flipAnimation(element) {
+    element.parentElement.classList.add('flip-card-back');
+    element.parentElement.nextElementSibling.classList.add('flip-card-front');
+  },
+  wrongCardsAnimation(cardsIndex) {
+    setTimeout(() => {
+      cardsIndex.forEach((cardIndex) => {
+        let cardImg = document.querySelector(`[data-card-id="${cardIndex}"]`);
+        cardImg.parentElement.nextElementSibling.style.backgroundColor =
+          '#ffd6f5';
+      });
+    }, 200);
+  },
+};
 
-  // shuffle cards
-  for (let i = 52; i > 0; i--) {
-    let randomIndex = Math.floor(Math.random() * i);
-    shuffledCards.push(cards[randomIndex]); // 1 ~ 52
-    cards.splice(randomIndex, 1);
-  }
-}
+const controllers = {
+  currentState: GAME_STATE.FirstCardAwaits,
+  cardMap: ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'],
+  generateCards() {
+    const shuffledCards = utility.shuffleCardsIndex();
+    for (let i = 0; i < shuffledCards.length; i++) {
+      let container;
+      switch (i % 4) {
+        case 0:
+          container = cardsPanel.children[0];
+          break;
+        case 1:
+          container = cardsPanel.children[1];
+          break;
+        case 2:
+          container = cardsPanel.children[2];
+          break;
+        case 3:
+          container = cardsPanel.children[3];
+          break;
+      }
 
-function indexToCardnum(index) {
-  return Math.floor(index / 4);
-}
+      // pattern
+      let patternHTML;
+      switch (shuffledCards[i] % 4) {
+        case 0:
+          patternHTML = `<img class="align-self-center" src="https://assets-lighthouse.alphacamp.co/uploads/image/file/17988/__.png"></img>`;
+          break;
+        case 1:
+          patternHTML = `<i class="align-self-center fa-solid fa-diamond" style="color: #c21414;"></i>`;
+          break;
+        case 2:
+          patternHTML = `<i class="align-self-center fa-solid fa-heart" style="color: #c21414;"></i>`;
+          break;
+        case 3:
+          patternHTML = `<img class="align-self-center" src="https://assets-lighthouse.alphacamp.co/uploads/image/file/17989/__.png"></img>`;
+          break;
+      }
 
-// render cards to the page
-function renderCards() {
-  for (let i = 0; i < shuffledCards.length; i++) {
-    let container;
-    switch (i % 4) {
-      case 0:
-        container = cardsPanel.children[0];
-        break;
-      case 1:
-        container = cardsPanel.children[1];
-        break;
-      case 2:
-        container = cardsPanel.children[2];
-        break;
-      case 3:
-        container = cardsPanel.children[3];
-        break;
-    }
-
-    // pattern
-    const patterns = { 0: 'club', 1: 'diamond', 2: 'heart', 3: 'spade' };
-    let patternHTML;
-    switch (shuffledCards[i] % 4) {
-      case 0:
-        patternHTML = `<img class="align-self-center" src="https://assets-lighthouse.alphacamp.co/uploads/image/file/17988/__.png"></img>`;
-        break;
-      case 1:
-        patternHTML = `<i class="align-self-center fa-solid fa-diamond" style="color: #c21414;"></i>`;
-        break;
-      case 2:
-        patternHTML = `<i class="align-self-center fa-solid fa-heart" style="color: #c21414;"></i>`;
-        break;
-      case 3:
-        patternHTML = `<img class="align-self-center" src="https://assets-lighthouse.alphacamp.co/uploads/image/file/17989/__.png"></img>`;
-        break;
-    }
-
-    container.innerHTML += `
+      let cardsHTML = `
       <div class="main-card position-relative">
         <div class="card card-back">
           <img src="https://assets-lighthouse.alphacamp.co/uploads/image/file/9222/ExportedContentImage_00.png" data-card-id="${
@@ -85,83 +109,97 @@ function renderCards() {
         </div>
         <div class="card card-front position-absolute top-0 d-flex flex-column justify-content-md-around" style="z-index: -1;">
           <span class="" style="">${
-            cardMap[Math.floor(shuffledCards[i] / 4)]
+            this.cardMap[Math.floor(shuffledCards[i] / 4)]
           }</span>
           ${patternHTML}
           <span class="" style="transform: rotate(-180deg)">${
-            cardMap[Math.floor(shuffledCards[i] / 4)]
+            this.cardMap[Math.floor(shuffledCards[i] / 4)]
           }</span>
         </div>
       </div>
     `;
-  }
-}
-
-// update score and tried times
-function renderUpdatedScore() {
-  triedElement.textContent = `You've tried: ${tryTimes}`;
-  scoreElement.textContent = `Score: ${score}`;
-}
-
-// check cards are same
-function checkSame(cardIndex) {
-  if (firstCards === null) {
-    firstCards = cardIndex;
-  } else {
-    // check same
-    if (indexToCardnum(firstCards) === indexToCardnum(cardIndex)) {
-      score += 10;
-      renderUpdatedScore();
-      setTimeout(() => {
-        fillCardsColor(firstCards);
-        fillCardsColor(cardIndex);
-        checkCompleted();
-      }, 300);
-    } else {
-      tryTimes += 1;
-      renderUpdatedScore();
-      cardsPanel.style.pointerEvents = 'none';
-      setTimeout(() => {
-        closeCards(firstCards);
-        closeCards(cardIndex);
-      }, 1000);
+      views.renderCards(container, cardsHTML);
     }
-  }
-}
+  },
+  dispatchCardAction(card) {
+    const cardIndex = parseInt(card.dataset.cardId);
+    switch (this.currentState) {
+      case GAME_STATE.FirstCardAwaits:
+        views.flipAnimation(card);
+        models.revealedCards.push(cardIndex);
+        this.currentState = GAME_STATE.SecondCardAwaits;
+        break;
 
-function closeCards(cardIndex) {
-  let cardImg = document.querySelector(`[data-card-id="${cardIndex}"]`);
-  cardImg.parentElement.classList.toggle('flip-card-back');
-  cardImg.parentElement.nextElementSibling.classList.toggle('flip-card-front');
-  cardsPanel.style.pointerEvents = 'auto';
-  firstCards = null;
-}
+      case GAME_STATE.SecondCardAwaits:
+        views.flipAnimation(card);
+        models.revealedCards.push(cardIndex);
+        if (
+          utility.indexToCardNum(models.revealedCards[0]) ===
+          utility.indexToCardNum(models.revealedCards[1])
+        ) {
+          this.currentState = GAME_STATE.CardsMatched;
+          views.renderScore((models.score += 10));
+          // wait for animation completed
+          setTimeout(this.pairCards, 200);
+          this.checkCompleted();
+        } else {
+          this.currentState = GAME_STATE.CardsMatchFailed;
+          views.renderTriedTimes(models.triedTimes++);
+          views.wrongCardsAnimation(models.revealedCards);
+          // keep revealed state in 1 sec.
+          setTimeout(this.resetCards, 1000);
+        }
+        break;
+    }
+  },
+  checkCompleted() {
+    if (models.score === 260) {
+      this.currentState = GAME_STATE.GameFinished;
+      document.querySelector('#completed').style.visibility = 'visible';
+    } else {
+      this.currentState = GAME_STATE.FirstCardAwaits;
+    }
+  },
+  pairCards() {
+    views.fillCardsColor(models.revealedCards);
+    models.revealedCards = [];
+  },
+  resetCards() {
+    views.closeCards(models.revealedCards);
+    models.revealedCards = [];
+    controllers.currentState = GAME_STATE.FirstCardAwaits;
+  },
+};
 
-function fillCardsColor(cardIndex) {
-  let cardImg = document.querySelector(`[data-card-id="${cardIndex}"]`);
-  cardImg.parentElement.nextElementSibling.style.backgroundColor = '#b4d9ef';
-  firstCards = null;
-}
+const models = {
+  revealedCards: [],
+  triedTimes: 0,
+  score: 0,
+};
+
+const utility = {
+  // shuffle the cards
+  shuffleCardsIndex() {
+    const shuffledCards = [];
+    // generate 0 ~ 51
+    const cards = [...Array(52).keys()];
+    // shuffle cards
+    for (let i = 52; i > 0; i--) {
+      let randomIndex = Math.floor(Math.random() * i);
+      shuffledCards.push(cards[randomIndex]); // 1 ~ 52
+      cards.splice(randomIndex, 1);
+    }
+    return shuffledCards;
+  },
+  indexToCardNum(index) {
+    return Math.floor(index / 4);
+  },
+};
 
 // add card click event
-function cardClickEvent() {
-  cardsPanel.addEventListener('click', (event) => {
-    if (event.target.matches('img')) {
-      event.target.parentElement.classList.toggle('flip-card-back');
-      event.target.parentElement.nextElementSibling.classList.toggle(
-        'flip-card-front'
-      );
-      checkSame(parseInt(event.target.dataset.cardId));
-    }
-  });
-}
-
-function checkCompleted() {
-  if (score === 260) {
-    alert('You win the Game~~');
+controllers.generateCards();
+cardsPanel.addEventListener('click', (event) => {
+  if (event.target.matches('img')) {
+    controllers.dispatchCardAction(event.target);
   }
-}
-
-shuffle();
-renderCards();
-cardClickEvent();
+});

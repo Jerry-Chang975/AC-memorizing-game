@@ -22,6 +22,18 @@
   </head>
 
   <body>
+    <div id="completed">
+      <h3>Complete!</h3>
+      <h5 id="completedScore">Score: 0</h5>
+      <h5 id="completedTriedTimes">You've tried: 0</h5>
+      <button
+        type="submit"
+        onclick="window.location.reload()"
+        class="btn btn-light"
+      >
+        Play Again
+      </button>
+    </div>
     <header>
       <div id="title" class="d-flex">
         <img
@@ -31,7 +43,7 @@
         />
         <h2>Memorizing Game</h2>
       </div>
-      <p style="" id="score">Score: 0</p>
+      <p id="score">Score: 0</p>
       <p id="tryTimes">You've tried: 0</p>
     </header>
 
